@@ -1,6 +1,4 @@
-DME.md file for your project:
-
-Random Wikipedia Fact Generator
+# Random Wikipedia Fact Generator
 This is a small web project that fetches and displays random facts from Wikipedia. The facts are categorized into five topics: Cars, Indian History, Music, Food, and Movies. Users can generate a random fact with the click of a button.
 
 Features
