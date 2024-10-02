@@ -5,28 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Random Fact Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             text-align: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
         h1 {
-            color: #333;
+            font-family: 'Merriweather', serif;
+            color: #4a4a4a;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
         #fact {
-            background-color: #f0f0f0;
-            border-radius: 5px;
+            background-color: #ffffff;
+            border-radius: 10px;
             padding: 20px;
             margin: 20px 0;
             min-height: 100px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        #fact:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        #fact h2 {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+        }
+        #fact p {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
         }
         button, select {
+            font-family: 'Roboto', sans-serif;
             font-size: 16px;
             padding: 10px 20px;
             margin: 10px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        select {
+            background-color: #3498db;
+            color: white;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+        }
+        select:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.5);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        select:hover {
+            animation: pulse 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animated-text {
+            opacity: 0;
+            animation: fadeIn 1s forwards;
         }
     </style>
 </head>
@@ -36,12 +104,12 @@
         <p>Click the button to generate a random fact!</p>
     </div>
     <select id="category">
-        <option value="">All Categories</option>
-        <option value="Category:Automobiles">Cars</option>
-        <option value="Category:History_of_India">Indian History</option>
-        <option value="Category:Foods">Food</option>
-        <option value="Category:Films">Movies</option>
-        <option value="Category:Music">Music</option>
+        <option value="random">Random</option>
+        <option value="history">History</option>
+        <option value="science">Science</option>
+        <option value="food">Food</option>
+        <option value="music">Music</option>
+        <option value="movies">Movies</option>
     </select>
     <button onclick="generateFact()">Generate New Fact</button>
 
@@ -52,24 +120,104 @@
             factElement.innerHTML = 'Loading...';
 
             try {
-                let pageTitle;
-                if (category) {
-                    const categoryMembers = await getCategoryMembers(category);
-                    if (categoryMembers.length === 0) {
-                        throw new Error('No pages found in this category');
-                    }
-                    pageTitle = categoryMembers[Math.floor(Math.random() * categoryMembers.length)];
-                } else {
-                    const randomPage = await getRandomPage();
-                    pageTitle = randomPage.title;
+                let fact;
+                switch(category) {
+                    case 'history':
+                        fact = await getHistoryFact();
+                        break;
+                    case 'science':
+                        fact = await getScienceFact();
+                        break;
+                    case 'food':
+                        fact = await getFoodFact();
+                        break;
+                    case 'music':
+                        fact = await getMusicFact();
+                        break;
+                    case 'movies':
+                        fact = await getMovieFact();
+                        break;
+                    default:
+                        fact = await getRandomFact();
                 }
-
-                const summary = await getPageSummary(pageTitle);
-                factElement.innerHTML = `<h2>${summary.title}</h2><p>${summary.extract}</p>`;
+                animateText(factElement, `<h2>${fact.title}</h2><p>${fact.content}</p>`);
             } catch (error) {
                 console.error('Error fetching fact:', error);
                 factElement.innerHTML = 'Failed to fetch a fact. Please try again.';
             }
+        }
+
+        function animateText(element, text) {
+            element.innerHTML = '';
+            const words = text.split(' ');
+            words.forEach((word, index) => {
+                const span = document.createElement('span');
+                span.innerHTML = word + ' ';
+                span.classList.add('animated-text');
+                span.style.animationDelay = `${index * 0.1}s`;
+                element.appendChild(span);
+            });
+        }
+
+        async function getHistoryFact() {
+            const response = await axios.get('https://api.api-ninjas.com/v1/historicalevents', {
+                headers: { 'X-Api-Key': 'Fop2K3CKvBBlM1R8YlUpobJn7qahCvZ7NucQyGgj' },
+                params: { offset: Math.floor(Math.random() * 1000) }
+            });
+            const event = response.data[0];
+            return {
+                title: `Historical Event (${event.year})`,
+                content: event.event
+            };
+        }
+
+        async function getScienceFact() {
+            const response = await axios.get('https://api.api-ninjas.com/v1/facts?limit=1&category=science', {
+                headers: { 'X-Api-Key': 'Fop2K3CKvBBlM1R8YlUpobJn7qahCvZ7NucQyGgj' }
+            });
+            return {
+                title: 'Science Fact',
+                content: response.data[0].fact
+            };
+        }
+
+        async function getFoodFact() {
+            const response = await axios.get('https://api.spoonacular.com/food/trivia/random', {
+                params: { apiKey: 'd2d080adac8e4a909417a3aa1ccb1de9' }
+            });
+            return {
+                title: 'Food Fact',
+                content: response.data.text
+            };
+        }
+
+        async function getMusicFact() {
+            const categoryMembers = await getCategoryMembers('Category:Music');
+            const randomTitle = categoryMembers[Math.floor(Math.random() * categoryMembers.length)];
+            const summary = await getPageSummary(randomTitle);
+            return {
+                title: summary.title,
+                content: summary.extract
+            };
+        }
+
+        async function getMovieFact() {
+            const categoryMembers = await getCategoryMembers('Category:Films');
+            const randomTitle = categoryMembers[Math.floor(Math.random() * categoryMembers.length)];
+            const summary = await getPageSummary(randomTitle);
+            return {
+                title: summary.title,
+                content: summary.extract
+            };
+        }
+
+        async function getRandomFact() {
+            const randomPage = await getRandomPage();
+            const summary = await getPageSummary(randomPage.title);
+            return {
+                title: summary.title,
+                content: summary.extract
+            };
         }
 
         async function getCategoryMembers(category) {
